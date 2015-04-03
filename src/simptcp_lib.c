@@ -1,6 +1,8 @@
 /*! \file simptcp_lib.c
  *  \brief{Defines the functions that gather the actions performed by a simptcp protocol entity in reaction to events (system calls, simptcp packet arrivals, timeouts) given its state at a point in time  (closed, ..established,..).}
  *  \author{DGEI-INSAT 2010-2011}
+ 
+ SIN -> SIN/ACK -> ACK foncitonne parfaitement ! :)
  */
 
 #include <assert.h>
@@ -26,6 +28,7 @@
 #define __DEBUG__               1
 #endif
 
+extern void simptcp_lprint_packet (char * buf);
 
 /*! \fn char *  simptcp_socket_state_get_str(simptcp_socket_state_funcs * state)
  * \brief renvoie une chaine correspondant a l'etat dans lequel se trouve un socket simpTCP. Utilisee a des fins d'affichage
@@ -319,8 +322,8 @@ int is_timeout(struct simptcp_socket * sock)
 int makePDU(struct  simptcp_socket* sock, unsigned char Flag, char * Msg, int long_msg)
 {
     if ((SIMPTCP_GHEADER_SIZE+long_msg) <= SIMPTCP_SOCKET_MAX_BUFFER_SIZE) {
-        simptcp_set_sport(sock->out_buffer,ntohs(sock->local_simptcp.sin_port));
-        simptcp_set_dport(sock->out_buffer,ntohs(sock->remote_simptcp.sin_port));
+        simptcp_set_sport(sock->out_buffer,sock->local_simptcp.sin_port);
+        simptcp_set_dport(sock->out_buffer,sock->remote_simptcp.sin_port);
         simptcp_set_flags(sock->out_buffer,Flag);
         simptcp_set_ack_num(sock->out_buffer,sock->next_ack_num);
         simptcp_set_seq_num(sock->out_buffer,sock->next_seq_num);
@@ -366,19 +369,20 @@ int closed_simptcp_socket_state_active_open (struct  simptcp_socket* sock, struc
     
     // definition socket en tant que client
     sock->socket_type = client;
-    
     // copie de l'adresse de destination dans le socket
     memcpy(&(sock->remote_simptcp),addr,len);
     memcpy(&(sock->remote_udp),addr,len);
     
+    //creation du PDU
     makePDU(sock,SYN,NULL,0);
     sock->next_seq_num++;
     
-    simptcp_lprint_packet(sock->out_buffer);
+    // envoi PDU
     if ( sendPDU(sock) != -1) {
         sock->socket_state = & simptcp_socket_states.synsent;
         sock->nbr_retransmit = 0;
         start_timer(sock, sock->timer_duration);
+        simptcp_lprint_packet(sock->out_buffer);
         return 0;
     }
     else {
@@ -405,7 +409,6 @@ int closed_simptcp_socket_state_passive_open (struct simptcp_socket* sock, int n
     for (int i = 0; i<n; i++) {
         sock->new_conn_req[i] = NULL;
     }
-    //sock->first_conn_req = sock->new_conn_req;
     sock->socket_state = & simptcp_socket_states.listen;
     
     return 0;
@@ -507,7 +510,6 @@ void closed_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket* soc
 #if __DEBUG__
     printf("function %s called\n", __func__);
 #endif
-    
 }
 
 /**
@@ -559,8 +561,7 @@ int listen_simptcp_socket_state_passive_open (struct simptcp_socket* sock, int n
 #if __DEBUG__
     printf("function %s called\n", __func__);
 #endif
-    
-    return 0;
+    return -1;
 }
 
 /**
@@ -578,6 +579,18 @@ int listen_simptcp_socket_state_accept (struct simptcp_socket* sock, struct sock
 #if __DEBUG__
     printf("function %s called\n", __func__);
 #endif
+    while (sock->pending_conn_req < 1) {
+        usleep(100);
+    }
+    /*if (simptcp_entity.open_simptcp_sockets < MAX_OPEN_SOCK) {
+        int fd = 0;
+        while (simptcp_entity.simptcp_socket_descriptors[fd] != NULL) {
+            fd++;
+        }
+        simptcp_entity.simptcp_socket_descriptors[fd] = sock->new_conn_req;
+        makePDU(simptcp_entity.simptcp_socket_descriptors[fd],SYN+ACK,NULL,0);
+        simptcp_lprint_packet(simptcp_entity.simptcp_socket_descriptors[fd]->out_buffer);
+    }*/
     return 0;
 }
 
@@ -670,6 +683,28 @@ void listen_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket* soc
 #if __DEBUG__
     printf("function %s called\n", __func__);
 #endif
+    if (simptcp_get_flags(buf)==SYN){
+        //mémoriser la demande de connexion
+        //copier les info du client dans la file d'attente de requete de connexion
+        sock->new_conn_req[sock->pending_conn_req]=malloc(sizeof(struct simptcp_socket));
+        memcpy(sock->new_conn_req[sock->pending_conn_req],sock,sizeof(struct simptcp_socket));
+        //le socket est nonlistening
+        sock->new_conn_req[sock->pending_conn_req]->socket_type=nonlistening_server;
+        //on crée un socket connecte a verifier!
+        sock->new_conn_req[sock->pending_conn_req] ->socket_state=&(simptcp_entity.simptcp_socket_states->established);
+        //une demande de plus
+        sock->pending_conn_req++;
+        //Acquitter le PDU recu
+        makePDU(sock,SYN+ACK,NULL,0);
+        sock->next_seq_num++;
+        
+        simptcp_lprint_packet(sock->out_buffer);
+        
+        sendPDU(sock);
+        //Aller dans l'etat synrcvd
+        //sock->socket_state=&(simptcp_entity.simptcp_socket_states->synrcvd);
+        sock->socket_state = & simptcp_socket_states.synrcvd;
+    }
 }
 
 /**
@@ -841,7 +876,20 @@ void synsent_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket* so
 #if __DEBUG__
     printf("function %s called\n", __func__);
 #endif
-    
+    if (simptcp_get_flags(buf)==SYN+ACK){
+        //arreter le timer
+        stop_timer(sock);
+        //acquitter le pdu recu
+        makePDU(sock,ACK,NULL,0);
+        sock->next_seq_num++;
+        simptcp_lprint_packet(sock->out_buffer);
+        sendPDU(sock);
+        //peut maintenant envoyer des messages
+        sock->socket_state_sender=wait_message;
+       // sock->socket_state_receiver=-1;
+        //Entrer dans l'etat ESTABLISHED (pour le client)
+        sock->socket_state = & simptcp_socket_states.established;
+    }
 }
 
 /**
@@ -858,7 +906,20 @@ void synsent_simptcp_socket_state_handle_timeout (struct simptcp_socket* sock)
 #if __DEBUG__
     printf("function %s called\n", __func__);
 #endif
-    
+    if (sock->nbr_retransmit < MAX_RETRANSMIT) {
+        if ( sendPDU(sock) != -1) {
+            sock->nbr_retransmit++;
+            start_timer(sock, sock->timer_duration);
+        }
+    }
+    else {
+        //On a pas réussi à se connecter...
+        stop_timer(sock);
+        sock->socket_type = unknown;
+        memset(&(sock->remote_simptcp),0,sizeof(struct sockaddr_in));
+        memset(&(sock->remote_udp),0,sizeof(struct sockaddr_in));
+        sock->socket_state = & simptcp_socket_states.closed;
+    }
     
 }
 
@@ -2260,7 +2321,7 @@ void timewait_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket* s
 /**
  * called after a timeout has detected
  */
-/*! 
+/*!
  * \fn void timewait_simptcp_socket_state_handle_timeout (struct simptcp_socket* sock)
  * \brief lancee lors d'un timeout du timer du socket simpTCP alors qu'il est dans l'etat "timewait"
  * \param sock pointeur sur les variables d'etat (#simptcp_socket) du socket simpTCP

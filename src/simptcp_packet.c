@@ -39,7 +39,7 @@ void simptcp_set_sport(char * buffer, u_int16_t sport)
 #if __DEBUG__
   //  printf("function %s called\n", __func__);
 #endif
-  ((simptcp_generic_header *)buffer)->sport = htons(sport);
+  ((simptcp_generic_header *)buffer)->sport = sport;
 }
 
 
@@ -67,7 +67,7 @@ void    simptcp_set_dport (char *buffer, u_int16_t dport)
 #if __DEBUG__
   //  printf("function %s called\n", __func__);
 #endif
-  ((simptcp_generic_header *)buffer)->dport = htons(dport);
+  ((simptcp_generic_header *)buffer)->dport = dport;
 }
 
 
@@ -123,7 +123,7 @@ void    simptcp_set_seq_num   (char *buffer, u_int16_t seq)
 #if __DEBUG__
   // printf("function %s called\n", __func__);
 #endif
-  ((simptcp_generic_header *)buffer)->seq_num = htons(seq);
+  ((simptcp_generic_header *)buffer)->seq_num = seq;
 }
 
 
@@ -152,7 +152,7 @@ void    simptcp_set_ack_num   (char *buffer, u_int16_t ack)
 #if __DEBUG__
   // printf("function %s called\n", __func__);
 #endif
-  ((simptcp_generic_header *)buffer)->ack_num = htons(ack);
+  ((simptcp_generic_header *)buffer)->ack_num = ack;
 }
 
 
@@ -208,7 +208,7 @@ void    simptcp_set_total_len   (char *buffer, u_int16_t tlen)
 #if __DEBUG__
   //printf("function %s called\n", __func__);
 #endif  
-((simptcp_generic_header *)buffer)->total_len = htons(tlen);
+((simptcp_generic_header *)buffer)->total_len = tlen;
 }
 
 
@@ -236,7 +236,7 @@ void    simptcp_set_win_size   (char *buffer, u_int16_t size)
 #if __DEBUG__
   //printf("function %s called\n", __func__);
 #endif
-((simptcp_generic_header *)buffer)->window_size = htons(size);
+((simptcp_generic_header *)buffer)->window_size = size;
 }
 
 
@@ -453,24 +453,3 @@ void simptcp_print_packet (char * buf)
       printf("DATA: %35s \n",(buf+hlen));
     }
 }
-
-/*char* simptcp_create_pdu(u_int16_t sport, u_int16_t dport, unsigned char flags, u_int16_t seq, u_int16_t ack, u_int16_t window_size,  char* data) {
-      
-      simptcp_generic_header *header =(simptcp_generic_header *) malloc(sizeof(simptcp_generic_header));
-      simptcp_set_sport((char *)header, sport);
-      simptcp_set_dport((char *)header, dport);
-      simptcp_set_flags((char *)header, flags);
-      simptcp_set_seq_num((char *)header, seq);
-      simptcp_set_ack_num((char *)header, ack);
-      simptcp_set_head_len((char *)header, sizeof(header));
-      simptcp_set_total_len((char *)header, sizeof(header)+sizeof(data));
-      simptcp_set_win_size((char *)header, window_size);
-      simptcp_add_checksum((char *)header, sizeof(header)+sizeof(data));
-      
-      char *pdu = malloc(sizeof(header)+sizeof(data));
-      strcpy(pdu, header);
-      strcat(pdu, data);
-      return pdu;
-    }
-*/
-/* vim: set expandtab ts=4 sw=4 tw=80: */
