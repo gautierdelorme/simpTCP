@@ -726,10 +726,7 @@ void listen_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket* soc
         sock->next_seq_num++;
         sendPDU(sock);
         simptcp_lprint_packet(sock->out_buffer);
-        //        sock->socket_state=&(simptcp_entity.simptcp_socket_states->synrcvd);
         sock->socket_state=&(simptcp_socket_states.synrcvd);
-        printf("Pour gautier\n");
-        print_simptcp_socket(sock);
     }
     
 }
@@ -913,11 +910,7 @@ void synsent_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket* so
         sendPDU(sock);
         simptcp_lprint_packet(sock->out_buffer);
         sock->socket_state_sender=wait_message;
-        //        sock->socket_state_receiver=-1;
         sock->socket_state=&simptcp_socket_states.established;
-        printf("Pour gautier 2\n");
-        print_simptcp_socket(sock);
-        
     }
 }
 
