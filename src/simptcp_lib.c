@@ -1249,19 +1249,11 @@ ssize_t established_simptcp_socket_state_recv (struct simptcp_socket* sock, void
     printf("function %s called\n", __func__);
 #endif
     int len;
-    
-    // printf("---------------- DEDEBUGBUGBUGBUGBUGBUG dans established_simptcp_socket_state_recv \n");
-    
-    printf("---------------- DEDEBUGBUGBUGBUGBUGBUG---2 dans established_simptcp_socket_state_recv \n");
-    
     if (sock->socket_type == listening_server) {
         
         while (sock->socket_state_receiver != wait_ack) {
             usleep(100);
         }
-        
-        
-        printf("---------------- DEDEBUGBUGBUGBUGBUGBUG---3 dans established_simptcp_socket_state_recv  \n");
         
         len = simptcp_get_total_len(sock->in_buffer)-simptcp_get_head_len(sock->in_buffer);
         if (n < len) {
@@ -1328,7 +1320,42 @@ void established_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket
 #if __DEBUG__
     printf("function %s called\n", __func__);
 #endif
+    lock_simptcp_socket(sock);
+    if ((simptcp_get_flags(buf) == FIN) && (sock->next_ack_num == simptcp_get_seq_num(buf))) { // si on recoit un FIN
+        sock->next_ack_num++;
+        make_PDU(sock, ACK, NULL, 0);
+        if (sendPDU(sock) != -1) {
+            sock->socket_state = & simptcp_socket_states.closewait;
+        }
+    }
     
+    if (sock->socket_type == client) {
+        if (simptcp_get_flags(buf) == ACK && simptcp_get_ack_num(buf) == sock->next_seq_num) {
+            sock->socket_state_sender = wait_message;
+            stop_timer(sock);
+        }
+        else {
+            sock->nbr_retransmit = MAX_RETRANSMIT; // si un write etait en cours, renvoie un echec
+            stop_timer(sock);
+            make_PDU(sock, ACK, NULL, 0);
+            if (sendPDU(sock) != -1) {
+                sock->socket_state_sender = wait_message;
+            }
+        }
+    }
+    else if (sock->socket_type == nonlistening_server) {
+        if (sock->socket_state_receiver == wait_packet) {
+            if (sock->next_ack_num == simptcp_get_seq_num(buf)) {
+                sock->socket_state_receiver = wait_ack;
+                memcpy(sock->in_buffer,buf,len);
+                sock->in_len = len;
+                sock->next_ack_num++;
+            }
+            make_PDU(sock, ACK, NULL, 0);
+            if (sendPDU(sock) != -1) {}
+        }
+    }
+    unlock_simptcp_socket(sock);
 }
 
 /**
