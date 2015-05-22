@@ -26,20 +26,12 @@
 #define __DEBUG__               1
 #endif
 
-
-
 /*
  1/ Ce qui marche
  - Envoi du SYN
  - Envoi du SYN + ACK
  - Envoi du ACK
- - Envoi d'un message au redemarrage du serveur
- 2/ Bug connus
- - Je dois redemarrer le serveur pour que le message apparaisse.
- - Le serveur se coupe tout seul au moment où il a finit la connection (SYN/SYN+ACL/ACK --> Established)
- 3/ Section remarques diverses (libre à vous, commentaires etc ...)
- - ...
- 
+ - Envoi d'un message
  */
 
 
@@ -383,25 +375,19 @@ int closed_simptcp_socket_state_active_open (struct  simptcp_socket* sock, struc
 #if __DEBUG__
     printf("function %s called\n", __func__);
 #endif
-    // la fonction connect n'est utilisée que par le client, donc le type de socket est "client"
     sock->socket_type = client;
     
-    // paramétrage de l'adresse de destination
     memcpy(&(sock->remote_udp),addr,len);
     memcpy(&(sock->remote_simptcp),addr,len);
     
     make_PDU(sock,SYN,NULL,0);
-    // sock->remote_udp.sin_port = htons(15556);
-    simptcp_lprint_packet(sock->out_buffer);
+    //sock->remote_udp.sin_port = htons(15556);
     sock->next_seq_num++;
     
     if ( sendPDU(sock) != -1) {
-        // printf("------------ SEND PDU (SOCK) LONGUEUR  %d\n", sendPDU(sock));
         sock->nbr_retransmit = 0;
         sock->socket_state = & simptcp_socket_states.synsent;
         start_timer(sock, sock->timer_duration);
-        printf("--------DDEEEBBBUUUGGG------- j'envoie le SYN\n");
-        //  print_simptcp_socket(sock->out_buffer);
         return 0;
     }
     else return -1;
@@ -428,7 +414,6 @@ int closed_simptcp_socket_state_passive_open (struct simptcp_socket* sock, int n
     sock->max_conn_req_backlog = n;
     sock->new_conn_req = malloc(n * sizeof(struct simptcp_socket*));
     for (fd = 0; fd<n; fd++) {
-        // on met tout le tableau à NULL
         sock->new_conn_req[fd] = NULL;
     }
     sock->socket_state = & simptcp_socket_states.listen;
@@ -600,22 +585,12 @@ int listen_simptcp_socket_state_passive_open (struct simptcp_socket* sock, int n
  */
 int listen_simptcp_socket_state_accept (struct simptcp_socket* sock, struct sockaddr* addr, socklen_t* len)
 {
-    int fd;
 #if __DEBUG__
     printf("function %s called\n", __func__);
 #endif
-    printf("----------- DEBUUUUGGG ------- je veux renvoyer SYN + ACK \n");
-    
-    //        sock->socket_type = listening_server;
     while (sock->pending_conn_req < 1) {
-        //  printf("J'attends d'incrementer pending\n");
         usleep(200);
     }
-    // On send dans le process !
-    
-    
-    printf("BBBBBBBBBBBBBBBBB\n");
-    
     return 0;
     
     
@@ -713,7 +688,6 @@ void listen_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket* soc
 #if __DEBUG__
     printf("function %s called\n", __func__);
 #endif
-    printf("----------- DEBUUUUG ------- listen_simptcp_socket_state_process_simptcp_pdu \n");
     if ((simptcp_get_flags(buf) == SYN))
     {
         sock->new_conn_req[sock->pending_conn_req]=malloc(sizeof(struct simptcp_socket));
@@ -725,7 +699,6 @@ void listen_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket* soc
         make_PDU(sock, SYN+ACK, NULL, 0);
         sock->next_seq_num++;
         sendPDU(sock);
-        simptcp_lprint_packet(sock->out_buffer);
         sock->socket_state=&(simptcp_socket_states.synrcvd);
     }
     
@@ -898,17 +871,13 @@ void synsent_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket* so
 {
     
 #if __DEBUG__
-    printf("function %s called\n", __func__);
+    printf("function %s called\n", __func__) ;
 #endif
-    //printf("J'ennnnvoie mon ACKKK \n");
-    
     if (simptcp_get_flags(buf)==SYN+ACK){
-        printf("------------------ Je stop mon timer! \n");
         stop_timer(sock);
         make_PDU(sock, ACK, NULL, 0);
         sock->next_seq_num++;
         sendPDU(sock);
-        simptcp_lprint_packet(sock->out_buffer);
         sock->socket_state_sender=wait_message;
         sock->socket_state=&simptcp_socket_states.established;
     }
@@ -1106,7 +1075,6 @@ void synrcvd_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket* so
     printf("function %s called\n", __func__);
 #endif
     if ((simptcp_get_flags(buf) == ACK)) {
-        printf("--------------------------------- DEBUBUBUBUG Dans synrcvd_simptcp_socket_state_process_simptcp_pdu");
         stop_timer(sock);
         sock->next_ack_num = simptcp_get_seq_num(buf);
         sock->socket_state_receiver = wait_packet;
@@ -1250,11 +1218,9 @@ ssize_t established_simptcp_socket_state_recv (struct simptcp_socket* sock, void
 #endif
     int len;
     if (sock->socket_type == listening_server) {
-        
         while (sock->socket_state_receiver != wait_ack) {
             usleep(100);
         }
-        
         len = simptcp_get_total_len(sock->in_buffer)-simptcp_get_head_len(sock->in_buffer);
         if (n < len) {
             len = n;
@@ -1320,6 +1286,7 @@ void established_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket
 #if __DEBUG__
     printf("function %s called\n", __func__);
 #endif
+    
     lock_simptcp_socket(sock);
     if ((simptcp_get_flags(buf) == FIN) && (sock->next_ack_num == simptcp_get_seq_num(buf))) { // si on recoit un FIN
         sock->next_ack_num++;
@@ -1335,7 +1302,7 @@ void established_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket
             stop_timer(sock);
         }
         else {
-            sock->nbr_retransmit = MAX_RETRANSMIT; // si un write etait en cours, renvoie un echec
+            sock->nbr_retransmit = MAX_RETRANSMIT;
             stop_timer(sock);
             make_PDU(sock, ACK, NULL, 0);
             if (sendPDU(sock) != -1) {
@@ -1343,14 +1310,12 @@ void established_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket
             }
         }
     }
-    else if (sock->socket_type == nonlistening_server) {
+    else if (sock->socket_type == listening_server) {
         if (sock->socket_state_receiver == wait_packet) {
-            if (sock->next_ack_num == simptcp_get_seq_num(buf)) {
-                sock->socket_state_receiver = wait_ack;
-                memcpy(sock->in_buffer,buf,len);
-                sock->in_len = len;
-                sock->next_ack_num++;
-            }
+            sock->socket_state_receiver = wait_ack;
+            memcpy(sock->in_buffer,buf,len);
+            sock->in_len = len;
+            sock->next_ack_num++;
             make_PDU(sock, ACK, NULL, 0);
             if (sendPDU(sock) != -1) {}
         }
@@ -2429,6 +2394,3 @@ void timewait_simptcp_socket_state_handle_timeout (struct simptcp_socket* sock)
     printf("function %s called\n", __func__);
 #endif
 }
-
-// TODO : rajouter fonction delete/remove simptcp_socket
-
