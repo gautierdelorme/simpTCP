@@ -23,7 +23,7 @@
 #include <term_io.h>
 
 #ifndef __DEBUG__
-#define __DEBUG__               1
+#define __DEBUG__ 0
 #endif
 
 /*
@@ -592,8 +592,6 @@ int listen_simptcp_socket_state_accept (struct simptcp_socket* sock, struct sock
         usleep(200);
     }
     return 0;
-    
-    
 }
 
 /**
@@ -897,7 +895,6 @@ void synsent_simptcp_socket_state_handle_timeout (struct simptcp_socket* sock)
 #if __DEBUG__
     printf("function %s called\n", __func__);
 #endif
-    
     if (sock->nbr_retransmit < MAX_RETRANSMIT) {
         if ( sendPDU(sock) != -1) {
             sock->nbr_retransmit++;

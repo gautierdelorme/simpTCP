@@ -52,11 +52,15 @@ int main(int argc, char *argv[])
               error("ERROR on binding");
      listen(sockfd,5);
      clilen = sizeof(cli_addr);
-	 printf("Accept\n");
-     newsockfd = accept(sockfd, 
+    #if __DEBUG__
+        printf("Accept\n");
+    #endif
+     newsockfd = accept(sockfd,
                  (struct sockaddr *) &cli_addr, 
                  &clilen);
+    #if __DEBUG__
 	 printf("After Accept\n");
+    #endif
      if (newsockfd < 0) 
           error("ERROR on accept");
      bzero(buffer,256);

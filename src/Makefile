@@ -6,7 +6,7 @@
 EXEC	= client server
 CC	    = gcc
 INCSDIR = ../inc
-MACROS  = -D__DEBUG__=1
+MACROS  = 
 CCFLAGS = -Wall  -I$(INCSDIR) $(MACROS)
 LDFLAGS = -lm -ldl -lpthread 
 
