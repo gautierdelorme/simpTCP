@@ -716,7 +716,6 @@ void listen_simptcp_socket_state_process_simptcp_pdu (struct simptcp_socket* soc
     printf("----------- DEBUUUUG ------- listen_simptcp_socket_state_process_simptcp_pdu \n");
     if ((simptcp_get_flags(buf) == SYN))
     {
-        printf("\n>>>>>>>>>>\nPAPAYO\n>>>>>>>>>>\n\n");
         sock->new_conn_req[sock->pending_conn_req]=malloc(sizeof(struct simptcp_socket));
         memcpy(sock->new_conn_req[sock->pending_conn_req],sock,sizeof(struct simptcp_socket));
         sock->new_conn_req[sock->pending_conn_req]->socket_type=nonlistening_server;
@@ -1257,24 +1256,20 @@ ssize_t established_simptcp_socket_state_recv (struct simptcp_socket* sock, void
     printf("function %s called\n", __func__);
 #endif
     int len;
+    
+    // printf("---------------- DEDEBUGBUGBUGBUGBUGBUG dans established_simptcp_socket_state_recv \n");
+    
     printf("---------------- DEDEBUGBUGBUGBUGBUGBUG---2 dans established_simptcp_socket_state_recv \n");
-    if (sock->socket_type == nonlistening_server) {
-        printf(">>>>> nonlistening_server <<<<<<");
-    } else if (sock->socket_type == unknown) {
-        printf(">>>>> unknown <<<<<<");
-    } else if (sock->socket_type == client) {
-        printf(">>>>> client <<<<<<");
-    } else if (sock->socket_type == listening_server) {
-        printf(">>>>> listening_server <<<<<<");
-    } else {
-        printf(">>>>> else <<<<<<");
-    }
-    if (sock->socket_type == nonlistening_server) {
-        printf("---------------- DEDEBUGBUGBUGBUGBUGBUG---1 dans established_simptcp_socket_state_recv \n");
+    
+    if (sock->socket_type == listening_server) {
+        
         while (sock->socket_state_receiver != wait_ack) {
             usleep(100);
         }
-        printf("---------------- DEDEBUGBUGBUGBUGBUGBUG---3 dans established_simptcp_socket_state_recv \n");
+        
+        
+        printf("---------------- DEDEBUGBUGBUGBUGBUGBUG---3 dans established_simptcp_socket_state_recv  \n");
+        
         len = simptcp_get_total_len(sock->in_buffer)-simptcp_get_head_len(sock->in_buffer);
         if (n < len) {
             len = n;

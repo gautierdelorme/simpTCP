@@ -1,275 +1,288 @@
 /*! \file SimpTCP_packet.c
-*  \brief{Defines the simptcp header as well as the functions that handle simptcp packets}
-* \author{DGEI-INSAT 2010-2011}
-*/
+ *  \brief{Defines the simptcp header as well as the functions that handle simptcp packets}
+ * \author{DGEI-INSAT 2010-2011}
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <netinet/in.h>         /* for htons,.. */
-#include <term_colors.h>        /* for colors */
+#include "term_colors.h"        /* for colors */
 #define __PREFIX__              "[" COLOR("SIMTCP_PKT", BRIGHT_GREEN) "  ] "
-#include <term_io.h>            /* for printf() and perror() redefinition */
+#include "term_io.h"            /* for printf() and perror() redefinition */
 
-#include <simptcp_packet.h>     /* for simptcp packets*/
+#include "simptcp_packet.h"     /* for simptcp packets*/
+#include "simptcp_lib.h"
+#include "simptcp_entity.h"
+
 
 
 #ifndef __DEBUG__
 #define __DEBUG__               1
 #endif
 
+#define PORT_NUMBER_SOURCE 5456
+
+
+
 /*
  * simptcp  generic header get/set functions
  */
 
 
-/*! \fn 
- * \brief 
- * \param 
- * \return 
+/*! \fn
+ * \brief
+ * \param
+ * \return
  */
 
 /*! \fn void simptcp_set_sport(char * buffer, u_int16_t sport)
  * \brief initialise le champ sport (source port) du PDU SimpTCP a sport
- * \param buffer pointeur sur PDU simptcp 
+ * \param buffer pointeur sur PDU simptcp
  * \param sport numero de port source
-*/
+ */
 void simptcp_set_sport(char * buffer, u_int16_t sport)
-{ 
+{
 #if __DEBUG__
-  //  printf("function %s called\n", __func__);
+    //  printf("function %s called\n", __func__);
 #endif
-  ((simptcp_generic_header *)buffer)->sport = sport;
+    //((simptcp_generic_header *)buffer)->sport = htons(sport);
+    ((simptcp_generic_header *)buffer)->sport = (sport);
 }
 
 
 /*! \fn u_int16_t simptcp_get_sport (const char *buffer)
-* \brief renvoi la valeur du champ sport (source port) du PDU SimpTCP
-* \param buffer pointeur sur PDU simptcp 
-* \return numero de port source du PDU
-*/
+ * \brief renvoi la valeur du champ sport (source port) du PDU SimpTCP
+ * \param buffer pointeur sur PDU simptcp
+ * \return numero de port source du PDU
+ */
 u_int16_t simptcp_get_sport (const char *buffer)
 {
 #if __DEBUG__
-  //  printf("function %s called\n", __func__);
+    //  printf("function %s called\n", __func__);
 #endif
-  return ntohs(((const simptcp_generic_header  *)buffer)->sport);
+    return ntohs(((const simptcp_generic_header  *)buffer)->sport);
 }
 
 
 /*! \fn void simptcp_set_dport(char * buffer, u_int16_t dport)
  * \brief initialise le champ dport (destination port) du PDU SimpTCP a dport
- * \param buffer pointeur sur PDU simptcp 
+ * \param buffer pointeur sur PDU simptcp
  * \param dport numero de port destination
  */
 void    simptcp_set_dport (char *buffer, u_int16_t dport)
-{ 
+{
 #if __DEBUG__
-  //  printf("function %s called\n", __func__);
+    //  printf("function %s called\n", __func__);
 #endif
-  ((simptcp_generic_header *)buffer)->dport = dport;
+    //  ((simptcp_generic_header *)buffer)->dport = htons(dport);
+    ((simptcp_generic_header *)buffer)->dport = (dport);
 }
 
 
 /*! \fn u_int16_t simptcp_get_dport (const char *buffer)
  * \brief renvoi la valeur du champ dport (destination port) du PDU SimpTCP
- * \param buffer pointeur sur PDU simptcp 
+ * \param buffer pointeur sur PDU simptcp
  * \return numero de port destination du PDU
  */
 u_int16_t simptcp_get_dport (const char *buffer)
 {
 #if __DEBUG__
-  // printf("function %s called\n", __func__);
+    // printf("function %s called\n", __func__);
 #endif
-  return ntohs(((const simptcp_generic_header  *)buffer)->dport);
+    return ntohs(((const simptcp_generic_header  *)buffer)->dport);
 }
 
 
 /*! \fn void simptcp_set_flags  (char *buffer, u_char flags)
  * \brief initialise le champ flags  du PDU SimpTCP a flags
- * \param buffer pointeur sur PDU simptcp 
- * \param flags englobe la valeur des 7 flags (#SYN, #ACK, ..)  
+ * \param buffer pointeur sur PDU simptcp
+ * \param flags englobe la valeur des 7 flags (#SYN, #ACK, ..)
  */
 void    simptcp_set_flags  (char *buffer, u_char flags)
 {
 #if __DEBUG__
-  // printf("function %s called\n", __func__);
+    // printf("function %s called\n", __func__);
 #endif
-  ((simptcp_generic_header *) buffer)->flags = flags;
+    ((simptcp_generic_header *) buffer)->flags = flags;
 }
 
 
 /*! \fn void simptcp_get_flags  (char *buffer)
  * \brief renvoi la valeur du champ flags du PDU SimpTCP
- * \param buffer pointeur sur PDU simptcp 
- * \return valeur des 7 flags (#SYN, #ACK, ..) 
+ * \param buffer pointeur sur PDU simptcp
+ * \return valeur des 7 flags (#SYN, #ACK, ..)
  */
 unsigned char  simptcp_get_flags  (const char *buffer)
 {
 #if __DEBUG__
-  // printf("function %s called\n", __func__);
+    // printf("function %s called\n", __func__);
 #endif
-  return ((const simptcp_generic_header *) buffer)->flags;
+    return ((const simptcp_generic_header *) buffer)->flags;
 }
 
 
 /*! \fn void simptcp_set_seq_num   (char *buffer, u_int16_t seq)
  * \brief initialise le champ seq_num  du PDU SimpTCP a seq
- * \param buffer pointeur sur PDU simptcp 
- * \param seq numero de sequence 
+ * \param buffer pointeur sur PDU simptcp
+ * \param seq numero de sequence
  */
 void    simptcp_set_seq_num   (char *buffer, u_int16_t seq)
 {
 #if __DEBUG__
-  // printf("function %s called\n", __func__);
+    // printf("function %s called\n", __func__);
 #endif
-  ((simptcp_generic_header *)buffer)->seq_num = seq;
+    //((simptcp_generic_header *)buffer)->seq_num = htons(seq);
+    ((simptcp_generic_header *)buffer)->seq_num = (seq);
 }
 
 
 
 /*! \fn void simptcp_get_seq_num (char *buffer)
  * \brief renvoi la valeur du champ seq_num du PDU SimpTCP
- * \param buffer pointeur sur PDU simptcp 
+ * \param buffer pointeur sur PDU simptcp
  * \return numero de sequence transporte par le PDU
  */
 u_int16_t   simptcp_get_seq_num   (const char *buffer)
 {
 #if __DEBUG__
-  // printf("function %s called\n", __func__);
+    // printf("function %s called\n", __func__);
 #endif
-  return ntohs(((const simptcp_generic_header  *)buffer)->seq_num);
+    return ntohs(((const simptcp_generic_header  *)buffer)->seq_num);
 }
 
 
 /*! \fn void simptcp_set_ack_num   (char *buffer, u_int16_t ack)
  * \brief initialise le champ ack_num  du PDU SimpTCP a ack
- * \param buffer pointeur sur PDU simptcp 
- * \param ack numero d'acquittement   
+ * \param buffer pointeur sur PDU simptcp
+ * \param ack numero d'acquittement
  */
 void    simptcp_set_ack_num   (char *buffer, u_int16_t ack)
 {
 #if __DEBUG__
-  // printf("function %s called\n", __func__);
+    // printf("function %s called\n", __func__);
 #endif
-  ((simptcp_generic_header *)buffer)->ack_num = ack;
+    //((simptcp_generic_header *)buffer)->ack_num = htons(ack);
+    ((simptcp_generic_header *)buffer)->ack_num = (ack);
 }
 
 
 /*! \fn void simptcp_get_flags  (char *buffer)
  * \brief renvoi la valeur du champ flags du PDU SimpTCP
- * \param buffer pointeur sur PDU simptcp 
+ * \param buffer pointeur sur PDU simptcp
  * \return valeur du champ numero d'acquittement du PDU
  */
 u_int16_t   simptcp_get_ack_num   (const char *buffer)
 {
 #if __DEBUG__
-  // printf("function %s called\n", __func__);
+    // printf("function %s called\n", __func__);
 #endif
-  return ntohs(((const simptcp_generic_header  *)buffer)->ack_num);
+    return ntohs(((const simptcp_generic_header  *)buffer)->ack_num);
 }
 
 
 /*! \fn void simptcp_set_head_len   (char *buffer, unsigned char hlen)
  * \brief initialise le champ header_len du PDU SimpTCP a hlen
- * \param buffer pointeur sur PDU simptcp 
+ * \param buffer pointeur sur PDU simptcp
  * \param hlen taille de l'en-tete
  */
 void simptcp_set_head_len   (char *buffer, unsigned char hlen)
 {
 #if __DEBUG__
-  // printf("function %s called\n", __func__);
+    // printf("function %s called\n", __func__);
 #endif
-  ((simptcp_generic_header *) buffer)->header_len = hlen;
+    ((simptcp_generic_header *) buffer)->header_len = hlen;
 }
 
 
 /*! \fn void simptcp_get_head_len   (const char *buffer)
  * \brief renvoi la valeur du champ header_len du PDU SimpTCP
- * \param buffer pointeur sur PDU simptcp 
- * \return valeur du champ Header_len du PDU 
+ * \param buffer pointeur sur PDU simptcp
+ * \return valeur du champ Header_len du PDU
  */
 unsigned char   simptcp_get_head_len   (const char *buffer)
 {
 #if __DEBUG__
-  //  printf("function %s called\n", __func__); 
+    //  printf("function %s called\n", __func__);
 #endif
-  return ((const simptcp_generic_header *) buffer)->header_len;
+    return ((const simptcp_generic_header *) buffer)->header_len;
 }
 
 
 /*! \fn void simptcp_set_total_len   (char *buffer, unsigned char tlen)
  * \brief initialise le champ total_len du PDU SimpTCP a hlen
- * \param buffer pointeur sur PDU simptcp 
+ * \param buffer pointeur sur PDU simptcp
  * \param tlen taille totale du PDU, charge utile incluse
  */
 void    simptcp_set_total_len   (char *buffer, u_int16_t tlen)
 {
 #if __DEBUG__
-  //printf("function %s called\n", __func__);
-#endif  
-((simptcp_generic_header *)buffer)->total_len = tlen;
+    //printf("function %s called\n", __func__);
+#endif
+    //((simptcp_generic_header *)buffer)->total_len = htons(tlen);
+    ((simptcp_generic_header *)buffer)->total_len = (tlen);
 }
 
 
 /*! \fn void simptcp_get_total_len   (const char *buffer)
  * \brief renvoi la valeur du champ total_len du PDU SimpTCP
- * \param buffer pointeur sur PDU simptcp 
- * \return valeur du champ total_len du PDU 
+ * \param buffer pointeur sur PDU simptcp
+ * \return valeur du champ total_len du PDU
  */
 u_int16_t   simptcp_get_total_len   (const char *buffer)
 {
 #if __DEBUG__
-  //printf("function %s called\n", __func__);
+    //printf("function %s called\n", __func__);
 #endif
-  return ntohs(((const simptcp_generic_header  *)buffer)->total_len);
+    return ntohs(((const simptcp_generic_header  *)buffer)->total_len);
 }
 
 
 /*! \fn void simptcp_set_win_size   (char *buffer, u_int16_t size)
  * \brief initialise le champ window_size du PDU SimpTCP a size
- * \param buffer pointeur sur PDU simptcp 
- * \param size taille de la fenêtre de contrôle de flux  
+ * \param buffer pointeur sur PDU simptcp
+ * \param size taille de la fenêtre de contrôle de flux
  */
 void    simptcp_set_win_size   (char *buffer, u_int16_t size)
 {
 #if __DEBUG__
-  //printf("function %s called\n", __func__);
+    //printf("function %s called\n", __func__);
 #endif
-((simptcp_generic_header *)buffer)->window_size = size;
+    //((simptcp_generic_header *)buffer)->window_size = htons(size);
+    ((simptcp_generic_header *)buffer)->window_size = (size);
 }
 
 
 /*! \fn void simptcp_get_win_size  (char *buffer)
  * \brief renvoi la valeur du champ window_size du PDU SimpTCP
- * \param buffer pointeur sur PDU simptcp 
+ * \param buffer pointeur sur PDU simptcp
  * \return valeur du champ window_size du PDU
  */
 u_int16_t   simptcp_get_win_size   (const char *buffer)
 {
 #if __DEBUG__
-  //printf("function %s called\n", __func__);
+    //printf("function %s called\n", __func__);
 #endif
-  return ntohs(((const simptcp_generic_header  *)buffer)->window_size);
+    return ntohs(((const simptcp_generic_header  *)buffer)->window_size);
 }
 
 
 /*! \fn void simptcp_get_checksum   (const char *buffer)
  * \brief renvoi la valeur du champ checksum du PDU SimpTCP
- * \param buffer pointeur sur PDU simptcp 
- * \return valeur du champ checksum du PDU  
+ * \param buffer pointeur sur PDU simptcp
+ * \return valeur du champ checksum du PDU
  */
 u_int16_t   simptcp_get_checksum   (const char *buffer)
 {
 #if __DEBUG__
-  //printf("function %s called\n", __func__);
+    //printf("function %s called\n", __func__);
 #endif
-  return ntohs(((const simptcp_generic_header  *)buffer)->checksum);
+    return ntohs(((const simptcp_generic_header  *)buffer)->checksum);
 }
 
 
 /*! \fn void simptcp_add_checksum (char *buffer, int len)
- *  \brief calculer le checksum sur le PDU et rajouter la valeur calculee \n 
+ *  \brief calculer le checksum sur le PDU et rajouter la valeur calculee \n
  * au champ checksum du PDU Adds checksum to a simptcp_packet of legth len
  * \param buffer pointeur sur PDU simpTCP a envoyer
  * \param len taille totale du PDU simpTCP a envoyer
@@ -286,14 +299,14 @@ void simptcp_add_checksum (char *buffer, int len)
     /* if length is odd we pad with 0 */
     if (len % 2 != 0)
     {
-	buffer[len] = 0;
-	++len;
+        buffer[len] = 0;
+        ++len;
     }
-
+    
     /* compute sender checksum */
     header->checksum = 0;
     for (i = 0; i < len / 2; ++i)
-	checksum += buf[i];
+        checksum += buf[i];
     /* add checksum */
     header->checksum = htons(checksum);
 }
@@ -304,7 +317,7 @@ void simptcp_add_checksum (char *buffer, int len)
  *  \brief verifie la validite du champ checksum d'un PDU simpTCP recu
  * \param buffer pointeur sur PDU simpTCP a envoyer
  * \param len taille totale du PDU simpTCP a envoyer
- * \return 1 si checksum OK, 0 sinon 
+ * \return 1 si checksum OK, 0 sinon
  */
 int simptcp_check_checksum(char *buffer, int len)
 {
@@ -318,17 +331,17 @@ int simptcp_check_checksum(char *buffer, int len)
     // if length is odd we pad with 0
     if (len % 2 != 0)
     {
-	buffer[len] = 0;
-	++len;
+        buffer[len] = 0;
+        ++len;
     }
-
+    
     /* compute receiver checksum */
     for (i = 0; i < len / 2; ++i) {
-      if (i == 7) continue;     /* checksum is the 8th double byte word */ 
-	checksum += buf[i];
+        if (i == 7) continue;     /* checksum is the 8th double byte word */
+        checksum += buf[i];
     }
     /* check sender and receiver's checksum */
-   return (checksum == ntohs(header->checksum));
+    return (checksum == ntohs(header->checksum));
 }
 
 
@@ -339,20 +352,20 @@ int simptcp_check_checksum(char *buffer, int len)
  * \return la taille en octets de la charge utile
  */
 u_int16_t simptcp_extract_data (char * pdu, void * payload) {
-
-u_int16_t dlen; /* data length */
-u_int16_t hlen; /* header length */
-  
+    
+    u_int16_t dlen; /* data length */
+    u_int16_t hlen; /* header length */
+    
 #if __DEBUG__
-  printf("function %s called\n", __func__);
+    printf("function %s called\n", __func__);
 #endif
-  hlen = simptcp_get_head_len(pdu); 
-  dlen = simptcp_get_total_len(pdu)-hlen;
-  if (dlen > 0) 
+    hlen = simptcp_get_head_len(pdu);
+    dlen = simptcp_get_total_len(pdu)-hlen;
+    if (dlen > 0)
     {
-      memcpy(payload,(pdu+hlen),dlen);
+        memcpy(payload,(pdu+hlen),dlen);
     }
-  return dlen;
+    return dlen;
 }
 
 /*!
@@ -377,79 +390,81 @@ void simptcp_lprint_packet (char * buf)
     char sflags[12] = "|";
     unsigned char hlen= simptcp_get_head_len(buf);
     unsigned char flags=simptcp_get_flags(buf);
-
+    
 #if __DEBUG__
     printf("function %s called\n", __func__);
 #endif
-
+    
     if ((flags & SYN) == SYN)
         strcat (sflags, "S|");
     else
         strcat (sflags, " |");
-
+    
     if ((flags & ACK) == ACK)
         strcat (sflags, "A|");
     else
         strcat(sflags, " |");
-
+    
     if ((flags & RST) == RST)
         strcat (sflags, "R|");
     else
         strcat (sflags, " |");
-
+    
     printf ("+----------------+-----------------+-------------------+\n");
     printf ("| sport : %5hu | dport : %5hu  | seqnum : %5hu |\n",
             simptcp_get_sport(buf), simptcp_get_dport(buf),
-	    simptcp_get_seq_num(buf));
+            simptcp_get_seq_num(buf));
     printf ("+----------------+-----------------+-------------------+\n");
     printf ("| acknum : %5hu | hlen : %3d  | Flags : %7s|\n",
-	    simptcp_get_ack_num(buf),hlen,sflags);
+            simptcp_get_ack_num(buf),hlen,sflags);
     printf ("+----------------+-----------------+-------------------+\n");
     if (!flags)
-      {
+    {
         printf ("| DATA : %35s           | \n",(buf+hlen));
-	printf ("+----------------------------------+-------------------+\n");
-      }
+        printf ("+----------------------------------+-------------------+\n");
+    }
 }
 
 
 /*!
-* \fn void simptcp_print_packet (char * buf)
-* \brief Fonction pour afficher de maniere synthetique, sur une ligne, un paquet.
-* \param buf PDU SimpTCP a afficher
-*/
+ * \fn void simptcp_print_packet (char * buf)
+ * \brief Fonction pour afficher de maniere synthetique, sur une ligne, un paquet.
+ * \param buf PDU SimpTCP a afficher
+ */
 void simptcp_print_packet (char * buf)
 {
-  char sflags[12] = "|";
-  unsigned char hlen= simptcp_get_head_len(buf);
-  unsigned int tlen=simptcp_get_total_len(buf);
-  
-  unsigned char flags=simptcp_get_flags(buf);
-  
+    char sflags[12] = "|";
+    unsigned char hlen= simptcp_get_head_len(buf);
+    unsigned int tlen=simptcp_get_total_len(buf);
+    
+    unsigned char flags=simptcp_get_flags(buf);
+    
 #if __DEBUG__
-  //   printf("function %s called\n", __func__);
+    //   printf("function %s called\n", __func__);
 #endif
-
+    
     if ((flags & SYN) == SYN)
         strcat (sflags, "S|");
     else
         strcat (sflags, " |");
-
+    
     if ((flags & ACK) == ACK)
         strcat (sflags, "A|");
     else
         strcat(sflags, " |");
-
+    
     if ((flags & RST) == RST)
         strcat (sflags, "R|");
     else
         strcat (sflags, " |");
-
- 
+    
+    
     printf("Source port: %5hu, Destination port: %5hu, seqnum: %5hu\n acknum:%5hu, hlen: %3d, flags: %7s, tlen: %5hu\n ",simptcp_get_sport(buf),
-	   simptcp_get_dport(buf),simptcp_get_seq_num(buf), 
-	   simptcp_get_ack_num(buf),hlen,sflags,simptcp_get_total_len(buf));
+           simptcp_get_dport(buf),simptcp_get_seq_num(buf),
+           simptcp_get_ack_num(buf),hlen,sflags,simptcp_get_total_len(buf));
     if (tlen != hlen) { /* simptcp packet conveys data */
-      printf("DATA: %35s \n",(buf+hlen));
+        printf("DATA: %35s \n",(buf+hlen));
     }
+    
 }
+/* vim: set expandtab ts=4 sw=4 tw=80: */
