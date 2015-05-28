@@ -24,7 +24,7 @@
 #include <term_io.h>
 
 #ifndef __DEBUG__
-#define __DEBUG__ 0
+#define __DEBUG__ 1
 #endif
 
 extern simptcp_socket_states_funcs simptcp_socket_states;
